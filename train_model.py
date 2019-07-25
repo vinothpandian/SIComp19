@@ -57,6 +57,8 @@ NAME = CONFIG["general"]["name"]
 VERBOSITY = int(CONFIG["general"]["verbosity"])
 
 # Set model configuration
+PRETRAINED_WEIGHTS = CONFIG["model"].get(
+    "pretrained_weights_path", fallback=None)
 LOSS = CONFIG["model"]["loss"]
 METRICS = CONFIG["model"]["metrics"].split(",")
 
@@ -156,7 +158,7 @@ else:
 DATASET = pd.read_csv(TRAINING_CSV, dtype=str)
 
 # DEBUG_MODE SET
-DATASET = DATASET[:256] if DEBUG_MODE else DATASET
+DATASET = DATASET[:BATCH_SIZE*12] if DEBUG_MODE else DATASET
 
 TRAIN_VALIDATION, TEST = train_test_split(DATASET, test_size=TEST_SPLIT)
 TRAIN, VALIDATION = train_test_split(
@@ -169,6 +171,7 @@ TESTSET_ARRAY = [[filename, "0"]
                  for filename in os.listdir(TESTSET_FOLDER)]
 TESTSET = pd.DataFrame(TESTSET_ARRAY, columns=["Id", "Expected"])
 
+TESTSET = TESTSET[:BATCH_SIZE*2] if DEBUG_MODE else TESTSET
 
 ###################################################################################################
 #  Create data generator to augment images for training and validation
@@ -275,6 +278,9 @@ OPTIMISER = SGD(lr=LEARNING_RATE, momentum=MOMENTUM)
 MODEL.compile(loss=LOSS, optimizer=OPTIMISER, metrics=[*METRICS, cohen_kappa])
 
 K.get_session().run(tf.local_variables_initializer())
+
+if PRETRAINED_WEIGHTS:
+    MODEL.load_weights(PRETRAINED_WEIGHTS)
 
 ###################################################################################################
 # Define callbacks
