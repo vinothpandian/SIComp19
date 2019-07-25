@@ -5,3 +5,4 @@ efficientnet==0.0.4
 keras==2.2.4
 scikit_learn==0.21.2
 tensorflow==1.14.0
+scikit-image==0.15.0
