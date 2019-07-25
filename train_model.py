@@ -293,22 +293,6 @@ if PRETRAINED_WEIGHTS:
 ###################################################################################################
 
 
-def step_decay(epoch):
-    """Generate step decay callback function
-
-    Arguments:
-        epoch {int} -- Current epoch value
-
-    Returns:
-        float -- Updated learning rate alpha after decay
-    """
-    alpha = LEARNING_RATE * (DROP_FACTOR ** np.floor((1 + epoch) / DROP_EVERY))
-    return float(alpha)
-
-
-# Learning rate decay in steps
-DECAY = LearningRateScheduler(step_decay)
-
 # Checkpoint model callback
 WEIGHT_NAME = os.path.join(
     WEIGHTS_FOLDER, "./weights.{epoch:02d}-{val_cohen_kappa:.2f}.hdf5")
@@ -327,7 +311,7 @@ TENSORBOARD = TensorBoard(log_dir=LOGS_FOLDER,
                           write_graph=True,
                           write_images=True)
 
-CALLBACKS = [EARLY_STOP, DECAY, CHECKPOINT, TENSORBOARD]
+CALLBACKS = [EARLY_STOP, CHECKPOINT, TENSORBOARD]
 
 ###################################################################################################
 # Train the model
