@@ -24,7 +24,7 @@ from keras.callbacks import (EarlyStopping, LearningRateScheduler,
                              ModelCheckpoint, TensorBoard)
 from keras.layers import Dense, Dropout, GlobalAveragePooling2D
 from keras.models import Model, Sequential, load_model
-from keras.optimizers import SGD
+from keras.optimizers import SGD, Adam
 from keras.preprocessing.image import ImageDataGenerator, load_img
 from keras.utils.data_utils import get_file
 from PIL import Image, ImageFile
@@ -39,6 +39,8 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 ###################################################################################################
 # Arguments for setting parameters while running array batch job
 ###################################################################################################
+
+OPTIMISER_MODE = "Adam"
 
 PARSER = argparse.ArgumentParser()
 PARSER.add_argument("-c", "--config_file", type=str, required=True,
@@ -135,12 +137,12 @@ elif NAME == "VGG16":
                        input_shape=(HEIGHT, WIDTH, DEPTH))
     preprocessing_function = vgg16_preprocess_input
 elif NAME == "Densenet":
-    HEIGHT, WIDTH = 224, 224
+    HEIGHT, WIDTH = 128, 128
     BASE_MODEL = DenseNet201(include_top=False, weights="imagenet",
                              input_shape=(HEIGHT, WIDTH, DEPTH))
     preprocessing_function = densenet_preprocess_input
 elif NAME == "efficientnet":
-    HEIGHT, WIDTH = 224, 224
+    HEIGHT, WIDTH = 128, 128
     BASE_MODEL = EfficientNetB5(include_top=False, weights="imagenet",
                                 input_shape=(HEIGHT, WIDTH, DEPTH))
     preprocessing_function = preprocess_input
@@ -171,7 +173,7 @@ TESTSET_ARRAY = [[filename, "0"]
                  for filename in os.listdir(TESTSET_FOLDER)]
 TESTSET = pd.DataFrame(TESTSET_ARRAY, columns=["Id", "Expected"])
 
-TESTSET = TESTSET[:BATCH_SIZE*2] if DEBUG_MODE else TESTSET
+TESTSET = TESTSET[:int(BATCH_SIZE*1.5)] if DEBUG_MODE else TESTSET
 
 ###################################################################################################
 #  Create data generator to augment images for training and validation
@@ -242,10 +244,10 @@ TESTSET_DATA = TESTSET_DATA_GENERATOR.flow_from_dataframe(dataframe=TESTSET,
                                                           batch_size=BATCH_SIZE,
                                                           shuffle=False)
 
-NUM_OF_TRAINING_SAMPLES = len(TRAIN)
+NUM_OF_TRAINING_SAMPLES = 64 if DEBUG_MODE else len(TRAIN)
 NUM_OF_VALIDATION_SAMPLES = len(VALIDATION)
 NUM_OF_TEST_SAMPLES = len(TEST)//BATCH_SIZE+1
-NUM_OF_TESTSET_SAMPLES = len(TESTSET_DATA.classes)//BATCH_SIZE+1
+NUM_OF_TESTSET_SAMPLES = len(TESTSET)//BATCH_SIZE+1
 CLASSES = 5
 
 
@@ -274,6 +276,10 @@ MODEL.add(Dense(512, activation='relu',  name="v_512Dense"))
 MODEL.add(Dense(CLASSES, activation='softmax', name="v_Softmax"))
 
 OPTIMISER = SGD(lr=LEARNING_RATE, momentum=MOMENTUM)
+
+if OPTIMISER_MODE == "Adam":
+    OPTIMISER = Adam(lr=LEARNING_RATE, beta_1=0.9,
+                     beta_2=0.999, epsilon=0.1, decay=0.0)
 
 MODEL.compile(loss=LOSS, optimizer=OPTIMISER, metrics=[*METRICS, cohen_kappa])
 
