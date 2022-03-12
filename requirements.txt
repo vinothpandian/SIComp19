@@ -1,6 +1,6 @@
 pandas==0.23.4
 numpy==1.15.4
-Pillow==6.1.0
+Pillow==9.0.1
 efficientnet==0.0.4
 keras==2.2.4
 scikit_learn==0.21.2
